@@ -24,6 +24,7 @@ const btnNewFolder = document.getElementById("btnNewFolder");
 const commonInput = document.getElementById("commonInput");
 const btnBatchPrefix = document.getElementById("btnBatchPrefix");
 const btnBatchSuffix = document.getElementById("btnBatchSuffix");
+const btnBatchReplace = document.getElementById("btnBatchReplace");
 const btnBatchRemove = document.getElementById("btnBatchRemove");
 const btnBatchMove = document.getElementById("btnBatchMove");
 
@@ -575,6 +576,79 @@ btnBatchSuffix.addEventListener("click", async () => {
   await refreshList();
 });
 
+btnBatchReplace.addEventListener("click", async () => {
+  const targetStr = commonInput.value;
+  if (!targetStr) {
+    alert("文字列入力欄に置き換え元の文字列を入力してください。");
+    commonInput.focus();
+    return;
+  }
+
+  if (selectedEntries.size === 0) {
+    alert("対象の項目を選択してください。");
+    return;
+  }
+
+  const replacementStr = prompt(`「${targetStr}」を何に置き換えますか？\n(空欄にした場合は削除と同じになります)`);
+  if (replacementStr === null) {
+    return;
+  }
+
+  const renameQueue = [];
+  for (const handle of selectedEntries) {
+    const originalName = handle.name;
+    let newName = "";
+
+    if (handle.kind === "directory") {
+      newName = originalName.replaceAll(targetStr, replacementStr);
+    } else {
+      const lastDotIndex = originalName.lastIndexOf(".");
+      if (lastDotIndex > 0) {
+        const baseName = originalName.substring(0, lastDotIndex);
+        const ext = originalName.substring(lastDotIndex);
+        const newBaseName = baseName.replaceAll(targetStr, replacementStr);
+        if (!newBaseName.trim() && !ext) continue; // ファイル名全体が空になるのを防ぐ（拡張子があれば許容）
+        newName = `${newBaseName}${ext}`;
+      } else {
+        newName = originalName.replaceAll(targetStr, replacementStr);
+      }
+    }
+
+    if (newName && newName !== originalName) {
+      renameQueue.push({ handle: handle, oldName: originalName, newName: newName });
+    }
+  }
+
+  if (renameQueue.length === 0) {
+    alert("対象の文字列が含まれる項目が見つかりませんでした。");
+    return;
+  }
+
+  if (!confirm(`${renameQueue.length} 件の置き換え候補が見つかりました。\n「${targetStr}」を「${replacementStr}」に置き換えますか？`)) {
+    return;
+  }
+
+  isOperating = true;
+  showLoading("文字列を置換中...", renameQueue.length);
+
+  for (let i = 0; i < renameQueue.length; i++) {
+    const item = renameQueue[i];
+    try {
+      await item.handle.move(item.newName);
+    } catch (err) {
+      console.error(err);
+    }
+    updateLoading(i + 1, renameQueue.length);
+    await nextTick();
+  }
+
+  hideLoading();
+  isOperating = false;
+
+  commonInput.value = "";
+  await refreshList();
+});
+
 btnBatchRemove.addEventListener("click", async () => {
   const targetStr = commonInput.value;
   if (!targetStr) {
@@ -618,7 +692,7 @@ btnBatchRemove.addEventListener("click", async () => {
     return;
   }
 
-  if (!confirm(`選択した ${renameQueue.length} 件から「${targetStr}」を除去しますか？`)) {
+  if (!confirm(`${renameQueue.length} 件の除去候補が見つかりました。\n「${targetStr}」を除去しますか？`)) {
     return;
   }
 
