@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "File Manager Pro",
+  "version": "1.0.0",
+  "description": "ローカルディレクトリのファイルを一括操作（文字列の付与や除去）できるファイルマネージャー",
+  "action": {
+    "default_icon": {
+      "16": "assets/app-icon-16.png",
+      "32": "assets/app-icon-32.png",
+      "48": "assets/app-icon-48.png",
+      "128": "assets/app-icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "assets/app-icon-16.png",
+    "32": "assets/app-icon-32.png",
+    "48": "assets/app-icon-48.png",
+    "128": "assets/app-icon-128.png"
+  },
+  "permissions": []
+}

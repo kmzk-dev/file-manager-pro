@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Folder Manager Pro</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/app-icon-16.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 1段目: フォルダを開く + プレーンパス表示 + 新規作成ボタン群 -->
+    <header class="top-row">
+      <button id="btnOpenDir" class="btn btn-primary">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+        <span class="btn-text-label">フォルダを開く</span>
+      </button>
+
+      <div class="path-plain-text">
+        <span class="path-arrow">&gt;</span>
+        <span id="currentDirPath" class="path-display">未選択</span>
+      </div>
+
+      <div class="header-action-group">
+        <button id="btnNewFile" class="btn btn-ghost" title="新規ファイル">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
+          <span class="btn-text-label">新規ファイル</span>
+        </button>
+        <button id="btnNewFolder" class="btn btn-ghost" title="新規フォルダ">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><path d="M12 10v6"/><path d="M9 13h6"/></svg>
+          <span class="btn-text-label">新規フォルダ</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2段目: 一括操作ツールバー + 自動更新 + 右横にコンパクトソート -->
+    <section class="second-row">
+      <div class="batch-actions-group">
+        <div class="input-wrapper">
+          <svg class="icon-sm input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="commonInput" class="custom-input" placeholder="対象文字列を入力..." />
+        </div>
+
+        <!-- Prefixを追加 (+T) -->
+        <button id="btnBatchPrefix" class="btn btn-secondary btn-responsive" title="Prefixを追加">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="2" y1="12" x2="6" y2="12"/><line x1="4" y1="10" x2="4" y2="14"/>
+            <path d="M10 7V4h11v3"/><path d="M14 20h3"/><path d="M15.5 4v16"/>
+          </svg>
+          <span class="btn-text-label">Prefixを追加</span>
+        </button>
+
+        <!-- Suffixを追加 (T+) -->
+        <button id="btnBatchSuffix" class="btn btn-secondary btn-responsive" title="Suffixを追加">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7V4h11v3"/><path d="M7 20h3"/><path d="M8.5 4v16"/>
+            <line x1="18" y1="12" x2="22" y2="12"/><line x1="20" y1="10" x2="20" y2="14"/>
+          </svg>
+          <span class="btn-text-label">Suffixを追加</span>
+        </button>
+        
+        <!-- 文字列を除去 (T-) -->
+        <button id="btnBatchRemove" class="btn btn-secondary btn-responsive" title="文字列を除去">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7V4h11v3"/><path d="M7 20h3"/><path d="M8.5 4v16"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+          </svg>
+          <span class="btn-text-label">文字列を除去</span>
+        </button>
+
+        <!-- 一括移動 -->
+        <button id="btnBatchMove" class="btn btn-secondary btn-responsive" title="一括移動">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+          <span class="btn-text-label">一括移動</span>
+        </button>
+
+        <!-- フラット自動更新 -->
+        <div class="auto-reload-plain" title="自動更新間隔">
+          <span class="pulse-dot" id="reloadIndicator"></span>
+          <span class="reload-label">自動更新</span>
+          <select id="autoReloadSelect" class="reload-select-flat">
+            <option value="0">オフ</option>
+            <option value="3">3秒</option>
+            <option value="5">5秒</option>
+            <option value="10">10秒</option>
+            <option value="30" selected>30秒</option>
+            <option value="60">60秒</option>
+          </select>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- 自動更新の右横に配置されたソートコントロール -->
+        <div class="sort-controls-flat">
+          <svg class="icon-sm text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+          
+          <select id="sortKeySelect" class="flat-select" title="ソート対象">
+            <option value="name">名前</option>
+            <option value="ext">拡張子</option>
+            <option value="size">サイズ</option>
+            <option value="date">日時</option>
+          </select>
+
+          <div class="sort-divider"></div>
+
+          <select id="sortOrderSelect" class="flat-select" title="並び順">
+            <option value="asc">昇順</option>
+            <option value="desc">降順</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- メイン一覧カード -->
+    <main class="main-card">
+      <div class="table-header-container">
+        <table class="header-table">
+          <thead>
+            <tr>
+              <th class="th-check">
+                <input type="checkbox" id="selectAllCheckbox" class="custom-checkbox" />
+              </th>
+              <th class="th-name sortable" data-sort="name">
+                <div class="th-content">
+                  <span>名前</span>
+                  <span id="selectedCountLabel" class="count-badge">0 件選択中</span>
+                  <span class="sort-indicator" id="sort-name">▲</span>
+                </div>
+              </th>
+              <th class="th-ext sortable col-optional" data-sort="ext">
+                <div class="th-content">
+                  <span>拡張子</span>
+                  <span class="sort-indicator" id="sort-ext"></span>
+                </div>
+              </th>
+              <th class="th-size sortable col-optional" data-sort="size">
+                <div class="th-content">
+                  <span>サイズ</span>
+                  <span class="sort-indicator" id="sort-size"></span>
+                </div>
+              </th>
+              <th class="th-date sortable col-optional" data-sort="date">
+                <div class="th-content">
+                  <span>日時</span>
+                  <span class="sort-indicator" id="sort-date"></span>
+                </div>
+              </th>
+              <th class="th-actions">
+                <div class="header-meta">
+                  <button id="btnRefresh" class="icon-only-btn" title="手動更新">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                  </button>
+                </div>
+              </th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+
+      <div class="card-body">
+        <table id="fileTable" class="body-table">
+          <tbody id="fileListBody">
+            <tr>
+              <td colspan="6" class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
+                <p class="empty-title">フォルダが選択されていません</p>
+                <p class="empty-subtitle">上部の「フォルダを開く」から操作したい作業ディレクトリを選択してください。</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- 一括処理中ローディングオーバーレイ -->
+  <div id="loadingOverlay" class="loading-overlay" hidden>
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <div id="loadingTitle" class="loading-title">処理中...</div>
+      <div id="loadingProgress" class="loading-progress">0 / 0 件 (0%)</div>
+    </div>
+  </div>
+
+  <!-- 移動先選択モーダルダイアログ -->
+  <dialog id="moveDialog" class="modal-dialog">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <div class="modal-icon-badge">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+        </div>
+        <div>
+          <h3 id="moveDialogTitle" class="dialog-title">移動先のフォルダを選択</h3>
+          <p id="moveDialogDesc" class="dialog-desc">移動するアイテム: 0件</p>
+        </div>
+      </div>
+      
+      <div class="folder-list-container">
+        <ul id="folderSelectList" class="folder-select-list"></ul>
+      </div>
+
+      <div class="dialog-actions">
+        <button id="btnCancelMove" class="btn btn-secondary">キャンセル</button>
+        <button id="btnConfirmMove" class="btn btn-primary" disabled>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
+          <span>このフォルダへ移動</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
