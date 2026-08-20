@@ -1,4 +1,6 @@
 let rootDirectoryHandle = null;
+let currentDirectoryHandle = null;
+let pathStack = [];
 let currentEntries = [];
 const selectedEntries = new Set();
 
@@ -49,7 +51,7 @@ const btnConfirmMove = document.getElementById("btnConfirmMove");
 const btnCancelMove = document.getElementById("btnCancelMove");
 
 let pendingMoveTargets = [];
-let selectedDestFolderName = null;
+let selectedDestDirHandle = null;
 
 // -------------------------------------------------------------
 // SVG アイコン定義
@@ -103,6 +105,52 @@ function hideLoading() {
 
 const nextTick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+async function verifyPermission(fileHandle, readWrite) {
+  const options = {};
+  if (readWrite) {
+    options.mode = "readwrite";
+  }
+  if ((await fileHandle.queryPermission(options)) === "granted") {
+    return true;
+  }
+  if ((await fileHandle.requestPermission(options)) === "granted") {
+    return true;
+  }
+  return false;
+}
+
+function renderBreadcrumbs() {
+  currentDirPath.innerHTML = "";
+  if (!currentDirectoryHandle) {
+    currentDirPath.textContent = "未選択";
+    return;
+  }
+
+  pathStack.forEach((segment, index) => {
+    if (index > 0) {
+      const arrow = document.createElement("span");
+      arrow.className = "path-arrow";
+      arrow.textContent = " > ";
+      currentDirPath.appendChild(arrow);
+    }
+
+    const span = document.createElement("span");
+    span.className = "path-segment";
+    span.textContent = segment.name;
+    
+    if (index < pathStack.length - 1) {
+      span.classList.add("clickable");
+      span.onclick = async () => {
+        pathStack = pathStack.slice(0, index + 1);
+        currentDirectoryHandle = segment.handle;
+        renderBreadcrumbs();
+        await refreshList();
+      };
+    }
+    currentDirPath.appendChild(span);
+  });
+}
+
 // -------------------------------------------------------------
 // 1. フォルダ選択ダイアログ
 // -------------------------------------------------------------
@@ -112,7 +160,9 @@ btnOpenDir.addEventListener("click", async () => {
       mode: "readwrite",
       id: "folder_manager_working_dir"
     });
-    currentDirPath.textContent = rootDirectoryHandle.name;
+    currentDirectoryHandle = rootDirectoryHandle;
+    pathStack = [{ name: rootDirectoryHandle.name, handle: rootDirectoryHandle }];
+    renderBreadcrumbs();
     selectedEntries.clear();
     await refreshList();
     setupAutoReload();
@@ -133,7 +183,7 @@ function setupAutoReload() {
   }
 
   const seconds = parseInt(autoReloadSelect.value, 10);
-  if (seconds > 0 && rootDirectoryHandle) {
+  if (seconds > 0 && currentDirectoryHandle) {
     reloadIndicator.classList.add("active");
     autoReloadTimer = setInterval(async () => {
       if (!isOperating && selectedEntries.size === 0 && !moveDialog.open && !document.querySelector(".dropdown-menu.show")) {
@@ -221,11 +271,11 @@ function sortEntries(entries) {
 // 4. 一覧の取得と描画
 // -------------------------------------------------------------
 async function refreshList(isSilent = false) {
-  if (!rootDirectoryHandle) return;
+  if (!currentDirectoryHandle) return;
 
   try {
     const rawEntries = [];
-    for await (const entry of rootDirectoryHandle.values()) {
+    for await (const entry of currentDirectoryHandle.values()) {
       rawEntries.push(entry);
     }
 
@@ -280,8 +330,9 @@ async function refreshList(isSilent = false) {
     if (!isSilent) {
       if (err.name === "NotFoundError") {
         alert("操作中のフォルダが削除または移動されたため、表示を初期化します。");
-        rootDirectoryHandle = null;
-        currentDirPath.textContent = "未選択";
+        currentDirectoryHandle = null;
+        pathStack = [];
+        renderBreadcrumbs();
         fileListBody.innerHTML = `
           <tr>
             <td colspan="7" class="empty-state">
@@ -316,6 +367,27 @@ function renderFileList() {
     const isChecked = selectedEntries.has(item.handle);
     const row = document.createElement("tr");
     if (isChecked) row.classList.add("is-selected");
+
+    if (item.kind === "directory") {
+      row.addEventListener("dblclick", async (e) => {
+        if (e.target.closest('.cell-check') || e.target.closest('.cell-actions') || e.target.closest('button')) return;
+        try {
+          const subDirHandle = await currentDirectoryHandle.getDirectoryHandle(item.name);
+          if (!(await verifyPermission(subDirHandle, false))) {
+            alert("このフォルダへのアクセス権限がありません。");
+            return;
+          }
+          currentDirectoryHandle = subDirHandle;
+          pathStack.push({ name: subDirHandle.name, handle: subDirHandle });
+          renderBreadcrumbs();
+          await refreshList();
+        } catch (err) {
+          alert(`フォルダへのアクセスエラー: ${err.message}`);
+        }
+      });
+      // フォルダ行はクリック可能であることを示す
+      row.style.cursor = "pointer";
+    }
 
     // 1. チェックボックス
     const checkCell = document.createElement("td");
@@ -408,7 +480,7 @@ function renderFileList() {
         <div class="dropdown-menu">
           <button class="menu-item menu-rename">${ICONS.edit}<span>リネーム</span></button>
           <button class="menu-item menu-move">${ICONS.move}<span>移動</span></button>
-          <button class="menu-item danger menu-delete">${ICONS.delete}<span>削除</span></button>
+          ${isDir ? "" : `<button class="menu-item danger menu-delete">${ICONS.delete}<span>削除</span></button>`}
         </div>
       </div>
     `;
@@ -453,12 +525,15 @@ function renderFileList() {
       openMoveModal([item.handle]);
     };
 
-    actionCell.querySelector(".menu-delete").onclick = (e) => {
-      e.stopPropagation();
-      dropdown.classList.remove("show");
-      triggerBtn.classList.remove("active");
-      deleteEntry(item.handle);
-    };
+    const deleteBtn = actionCell.querySelector(".menu-delete");
+    if (deleteBtn) {
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove("show");
+        triggerBtn.classList.remove("active");
+        deleteEntry(item.handle);
+      };
+    }
 
     row.appendChild(checkCell);
     row.appendChild(nameCell);
@@ -530,6 +605,11 @@ btnBatchPrefix.addEventListener("click", async () => {
     return;
   }
 
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+
   isOperating = true;
   showLoading("Prefixを追加中...", renameQueue.length);
 
@@ -586,6 +666,11 @@ btnBatchSuffix.addEventListener("click", async () => {
   }
 
   if (!confirm(`選択した ${renameQueue.length} 件の末尾に「${suffix}」を追加しますか？`)) {
+    return;
+  }
+
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
     return;
   }
 
@@ -662,6 +747,11 @@ btnBatchReplace.addEventListener("click", async () => {
     return;
   }
 
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+
   isOperating = true;
   showLoading("文字列を置換中...", renameQueue.length);
 
@@ -730,6 +820,11 @@ btnBatchRemove.addEventListener("click", async () => {
     return;
   }
 
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+
   isOperating = true;
   showLoading("文字列を除去中...", renameQueue.length);
 
@@ -754,18 +849,75 @@ btnBatchRemove.addEventListener("click", async () => {
 // -------------------------------------------------------------
 // 6. 移動モーダル
 // -------------------------------------------------------------
-function openMoveModal(targets) {
+async function getAllDirectories(handle, pathStr = "", excludePaths = new Set()) {
+  const dirs = [];
+  try {
+    for await (const entry of handle.values()) {
+      if (entry.kind === "directory") {
+        if (entry.name === "node_modules" || entry.name === ".git" || entry.name === ".venv") continue;
+        const subPath = pathStr === "" ? `/${entry.name}` : `${pathStr}/${entry.name}`;
+        
+        let isExcluded = false;
+        for (const exPath of excludePaths) {
+           if (subPath === exPath || subPath.startsWith(`${exPath}/`)) {
+             isExcluded = true;
+             break;
+           }
+        }
+        
+        if (!isExcluded) {
+          dirs.push({ name: subPath, handle: entry });
+          const subDirs = await getAllDirectories(entry, subPath, excludePaths);
+          dirs.push(...subDirs);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("ディレクトリ取得スキップ:", pathStr, err);
+  }
+  return dirs;
+}
+
+async function openMoveModal(targets) {
   pendingMoveTargets = targets;
-  selectedDestFolderName = null;
+  selectedDestDirHandle = null;
   btnConfirmMove.disabled = true;
 
-  const targetNames = new Set(targets.map((t) => t.name));
-  const validFolders = currentEntries.filter(
-    (e) => e.kind === "directory" && !targetNames.has(e.name)
-  );
+  const currentPathStr = pathStack.length > 1 ? "/" + pathStack.slice(1).map(s => s.name).join("/") : "";
+
+  const excludePaths = new Set();
+  targets.forEach(t => {
+    if (t.kind === "directory") {
+      excludePaths.add(`${currentPathStr}/${t.name}`);
+    }
+  });
+
+  isOperating = true;
+  showLoading("移動先フォルダを検索中...", 0);
+  
+  let validFolders = [];
+  try {
+    const allDirs = await getAllDirectories(rootDirectoryHandle, "", excludePaths);
+    
+    validFolders.push({ name: "/", handle: rootDirectoryHandle });
+    validFolders.push(...allDirs);
+    
+    validFolders = validFolders.filter(d => {
+      const dPath = d.name === "/" ? "" : d.name;
+      return dPath !== currentPathStr;
+    });
+
+  } catch (err) {
+    alert("フォルダ検索エラー: " + err.message);
+    hideLoading();
+    isOperating = false;
+    return;
+  }
+  hideLoading();
+  isOperating = false;
 
   if (validFolders.length === 0) {
-    alert("移動先として選択可能なサブフォルダが存在しません。");
+    alert("移動先として選択可能なフォルダが存在しません。");
     return;
   }
 
@@ -778,12 +930,12 @@ function openMoveModal(targets) {
     li.className = "folder-select-item";
     li.innerHTML = `
       <svg class="icon folder-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-      <span>${folder.name}</span>
+      <span title="${folder.name}">${folder.name}</span>
     `;
     li.onclick = () => {
       document.querySelectorAll(".folder-select-item").forEach((el) => el.classList.remove("selected"));
       li.classList.add("selected");
-      selectedDestFolderName = folder.name;
+      selectedDestDirHandle = folder.handle;
       btnConfirmMove.disabled = false;
     };
     folderSelectList.appendChild(li);
@@ -795,7 +947,17 @@ function openMoveModal(targets) {
 btnCancelMove.addEventListener("click", () => moveDialog.close());
 
 btnConfirmMove.addEventListener("click", async () => {
-  if (!selectedDestFolderName || pendingMoveTargets.length === 0) return;
+  if (!selectedDestDirHandle || pendingMoveTargets.length === 0) return;
+
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+
+  if (!(await verifyPermission(selectedDestDirHandle, true))) {
+    alert("移動先フォルダへの書き込み権限がありません。");
+    return;
+  }
 
   const total = pendingMoveTargets.length;
   moveDialog.close();
@@ -804,7 +966,7 @@ btnConfirmMove.addEventListener("click", async () => {
   showLoading("フォルダへ移動中...", total);
 
   try {
-    const destDirHandle = await rootDirectoryHandle.getDirectoryHandle(selectedDestFolderName);
+    const destDirHandle = selectedDestDirHandle;
 
     for (let i = 0; i < total; i++) {
       const entry = pendingMoveTargets[i];
@@ -838,12 +1000,17 @@ btnBatchMove.addEventListener("click", () => {
 // 7. 新規作成・個別操作
 // -------------------------------------------------------------
 btnNewFile.addEventListener("click", async () => {
-  if (!rootDirectoryHandle) return;
+  if (!currentDirectoryHandle) return;
   const fileName = prompt("新規作成するファイル名 (例: memo.txt):");
   if (!fileName) return;
 
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+
   try {
-    const fileHandle = await rootDirectoryHandle.getFileHandle(fileName, { create: true });
+    const fileHandle = await currentDirectoryHandle.getFileHandle(fileName, { create: true });
     const writable = await fileHandle.createWritable();
     await writable.write("");
     await writable.close();
@@ -854,12 +1021,17 @@ btnNewFile.addEventListener("click", async () => {
 });
 
 btnNewFolder.addEventListener("click", async () => {
-  if (!rootDirectoryHandle) return;
+  if (!currentDirectoryHandle) return;
   const folderName = prompt("新規フォルダ名:");
   if (!folderName) return;
 
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+
   try {
-    await rootDirectoryHandle.getDirectoryHandle(folderName, { create: true });
+    await currentDirectoryHandle.getDirectoryHandle(folderName, { create: true });
     await refreshList();
   } catch (err) {
     alert(`フォルダ作成失敗: ${err.message}`);
@@ -889,6 +1061,11 @@ async function renameEntry(handle) {
 
   const newFullName = `${newBaseName.trim()}${ext}`;
 
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+
   try {
     await handle.move(newFullName);
     await refreshList();
@@ -898,11 +1075,20 @@ async function renameEntry(handle) {
 }
 
 async function deleteEntry(handle) {
-  const isDir = handle.kind === "directory";
-  if (!confirm(`「${handle.name}」を削除しますか？${isDir ? "\n(内包される全ファイルも削除されます)" : ""}`)) return;
+  if (handle.kind === "directory") {
+    alert("フォルダの削除は許可されていません。");
+    return;
+  }
+
+  if (!confirm(`「${handle.name}」を削除しますか？\n※この操作は元に戻せません（ゴミ箱には入らず、直接完全削除されます）。`)) return;
+
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
 
   try {
-    await rootDirectoryHandle.removeEntry(handle.name, { recursive: isDir });
+    await currentDirectoryHandle.removeEntry(handle.name, { recursive: false });
     await refreshList();
   } catch (err) {
     alert(`削除失敗: ${err.message}`);

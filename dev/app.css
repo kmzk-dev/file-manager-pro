@@ -195,6 +195,25 @@ body {
   text-overflow: ellipsis;
 }
 
+.path-segment {
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.path-segment.clickable {
+  cursor: pointer;
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.path-segment.clickable:hover {
+  color: var(--primary-hover);
+}
+
 .header-action-group {
   display: flex;
   align-items: center;
@@ -802,7 +821,8 @@ td {
     padding: 10px;
   }
 
-  .btn-responsive .btn-text-label {
+  .btn-responsive .btn-text-label,
+  .btn-ghost .btn-text-label {
     display: none;
   }
 
