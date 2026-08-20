@@ -60,8 +60,20 @@ const ICONS = {
   menu: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`,
   edit: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`,
   move: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>`,
-  delete: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>`
+  delete: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>`,
+  openExternal: `<svg class="icon-sm open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`
 };
+
+const OPENABLE_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".avif",
+  ".txt", ".text", ".json", ".js", ".css", ".html", ".htm", ".xml", ".md", ".log", ".ini", ".yaml", ".yml", ".csv", ".tsv",
+  ".pdf",
+  ".mp3", ".wav", ".ogg", ".m4a", ".mp4", ".webm"
+]);
+
+function isPreviewable(ext) {
+  return OPENABLE_EXTENSIONS.has(ext.toLowerCase());
+}
 
 function formatBytes(bytes) {
   if (bytes === 0) return "0 B";
@@ -272,7 +284,7 @@ async function refreshList(isSilent = false) {
         currentDirPath.textContent = "未選択";
         fileListBody.innerHTML = `
           <tr>
-            <td colspan="6" class="empty-state">
+            <td colspan="7" class="empty-state">
               <p class="empty-title">フォルダが見つかりません</p>
               <p class="empty-subtitle">上部の「フォルダを開く」から作業ディレクトリを選択してください。</p>
             </td>
@@ -290,7 +302,7 @@ function renderFileList() {
   if (currentEntries.length === 0) {
     fileListBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">
+        <td colspan="7" class="empty-state">
           <p class="empty-title">フォルダは空です</p>
           <p class="empty-subtitle">新規ファイルまたは新規フォルダを作成してください。</p>
         </td>
@@ -335,6 +347,27 @@ function renderFileList() {
         <span>${item.baseName}</span>
       </div>
     `;
+
+    // 開く列
+    const openCell = document.createElement("td");
+    openCell.className = "cell-open";
+    if (!isDir && isPreviewable(item.ext)) {
+      const openBtn = document.createElement("button");
+      openBtn.className = "btn-open-file";
+      openBtn.title = "別タブでプレビュー";
+      openBtn.innerHTML = ICONS.openExternal;
+      openBtn.onclick = async (e) => {
+        e.stopPropagation();
+        try {
+          const file = await item.handle.getFile();
+          const fileUrl = URL.createObjectURL(file);
+          window.open(fileUrl, "_blank");
+        } catch (err) {
+          alert(`ファイルを開くことができませんでした: ${err.message}`);
+        }
+      };
+      openCell.appendChild(openBtn);
+    }
 
     // 3. 拡張子
     const extCell = document.createElement("td");
@@ -429,6 +462,7 @@ function renderFileList() {
 
     row.appendChild(checkCell);
     row.appendChild(nameCell);
+    row.appendChild(openCell);
     row.appendChild(extCell);
     row.appendChild(sizeCell);
     row.appendChild(dateCell);
