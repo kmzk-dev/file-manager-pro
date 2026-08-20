@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "File Manager Pro",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "ローカルディレクトリのファイルを一括操作（文字列の付与や除去）できるファイルマネージャー",
   "action": {
     "default_icon": {
