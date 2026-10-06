@@ -85,6 +85,12 @@
           <span class="btn-text-label">一括移動</span>
         </button>
 
+        <!-- 連番を付与 -->
+        <button id="btnBatchNumbering" class="btn btn-secondary btn-responsive" title="連番を付与">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 6h.01M8 12h.01M8 18h.01"/></svg>
+          <span class="btn-text-label">連番を付与</span>
+        </button>
+
         <!-- フラット自動更新 -->
         <div class="auto-reload-plain" title="自動更新間隔">
           <span class="pulse-dot" id="reloadIndicator"></span>
@@ -216,6 +222,56 @@
         <button id="btnConfirmMove" class="btn btn-primary" disabled>
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
           <span>このフォルダへ移動</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 連番付与モーダルダイアログ -->
+  <dialog id="numberingDialog" class="modal-dialog">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <div class="modal-icon-badge">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 6h.01M8 12h.01M8 18h.01"/></svg>
+        </div>
+        <div>
+          <h3 id="numberingDialogTitle" class="dialog-title">連番を付与</h3>
+          <p id="numberingDialogDesc" class="dialog-desc">対象アイテム: 0件</p>
+        </div>
+      </div>
+      
+      <div class="numbering-settings">
+        <div class="setting-group">
+          <label>開始番号</label>
+          <input type="number" id="numStart" class="custom-input small-input" value="1" min="0">
+        </div>
+        <div class="setting-group">
+          <label>桁数 (ゼロ埋め)</label>
+          <input type="number" id="numPadding" class="custom-input small-input" value="1" min="1" max="10">
+        </div>
+        <div class="setting-group">
+          <label>付与位置</label>
+          <select id="numPosition" class="custom-input small-select">
+            <option value="prefix">先頭 (Prefix)</option>
+            <option value="suffix">末尾 (Suffix)</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>区切り文字</label>
+          <input type="text" id="numSeparator" class="custom-input small-input" value="_">
+        </div>
+      </div>
+
+      <div class="numbering-list-container folder-list-container">
+        <ul id="numberingList" class="folder-select-list"></ul>
+      </div>
+      <p class="numbering-hint">※ アイテムをドラッグ＆ドロップで並べ替えられます。</p>
+
+      <div class="dialog-actions">
+        <button id="btnCancelNumbering" class="btn btn-secondary">キャンセル</button>
+        <button id="btnConfirmNumbering" class="btn btn-primary">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
+          <span>適用</span>
         </button>
       </div>
     </div>

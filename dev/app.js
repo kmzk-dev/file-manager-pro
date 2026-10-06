@@ -3,6 +3,7 @@ let currentDirectoryHandle = null;
 let pathStack = [];
 let currentEntries = [];
 const selectedEntries = new Set();
+let lastSelectedIndex = null;
 
 let autoReloadTimer = null;
 let isOperating = false;
@@ -29,6 +30,7 @@ const btnBatchSuffix = document.getElementById("btnBatchSuffix");
 const btnBatchReplace = document.getElementById("btnBatchReplace");
 const btnBatchRemove = document.getElementById("btnBatchRemove");
 const btnBatchMove = document.getElementById("btnBatchMove");
+const btnBatchNumbering = document.getElementById("btnBatchNumbering");
 
 const autoReloadSelect = document.getElementById("autoReloadSelect");
 const reloadIndicator = document.getElementById("reloadIndicator");
@@ -50,6 +52,18 @@ const folderSelectList = document.getElementById("folderSelectList");
 const btnConfirmMove = document.getElementById("btnConfirmMove");
 const btnCancelMove = document.getElementById("btnCancelMove");
 
+// 連番付与モーダル要素
+const numberingDialog = document.getElementById("numberingDialog");
+const numberingDialogDesc = document.getElementById("numberingDialogDesc");
+const numStart = document.getElementById("numStart");
+const numPadding = document.getElementById("numPadding");
+const numPosition = document.getElementById("numPosition");
+const numSeparator = document.getElementById("numSeparator");
+const numberingList = document.getElementById("numberingList");
+const btnConfirmNumbering = document.getElementById("btnConfirmNumbering");
+const btnCancelNumbering = document.getElementById("btnCancelNumbering");
+let pendingNumberingTargets = [];
+
 let pendingMoveTargets = [];
 let selectedDestDirHandle = null;
 
@@ -63,7 +77,8 @@ const ICONS = {
   edit: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`,
   move: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>`,
   delete: `<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>`,
-  openExternal: `<svg class="icon-sm open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`
+  openExternal: `<svg class="icon-sm open-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/></svg>`,
+  drag: `<svg class="icon-sm drag-handle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
 };
 
 const OPENABLE_EXTENSIONS = new Set([
@@ -321,6 +336,7 @@ async function refreshList(isSilent = false) {
 
     if (!isSilent) {
       selectedEntries.clear();
+      lastSelectedIndex = null;
       selectAllCheckbox.checked = false;
       updateSelectionCount();
     }
@@ -363,7 +379,7 @@ function renderFileList() {
 
   const sorted = sortEntries([...currentEntries]);
 
-  for (const item of sorted) {
+  sorted.forEach((item, index) => {
     const isChecked = selectedEntries.has(item.handle);
     const row = document.createElement("tr");
     if (isChecked) row.classList.add("is-selected");
@@ -396,14 +412,41 @@ function renderFileList() {
     checkbox.type = "checkbox";
     checkbox.className = "custom-checkbox row-checkbox";
     checkbox.checked = isChecked;
-    checkbox.onchange = (e) => {
-      if (e.target.checked) {
-        selectedEntries.add(item.handle);
-        row.classList.add("is-selected");
+    checkbox.onclick = (e) => {
+      const checked = e.target.checked;
+      
+      if (e.shiftKey && lastSelectedIndex !== null) {
+        const start = Math.min(lastSelectedIndex, index);
+        const end = Math.max(lastSelectedIndex, index);
+        const allCheckboxes = fileListBody.querySelectorAll(".row-checkbox");
+        const allRows = fileListBody.querySelectorAll("tr");
+        
+        for (let i = start; i <= end; i++) {
+          const targetItem = sorted[i];
+          const targetCb = allCheckboxes[i];
+          const targetRow = allRows[i];
+          
+          if (checked) {
+            selectedEntries.add(targetItem.handle);
+            if (targetCb) targetCb.checked = true;
+            if (targetRow) targetRow.classList.add("is-selected");
+          } else {
+            selectedEntries.delete(targetItem.handle);
+            if (targetCb) targetCb.checked = false;
+            if (targetRow) targetRow.classList.remove("is-selected");
+          }
+        }
       } else {
-        selectedEntries.delete(item.handle);
-        row.classList.remove("is-selected");
+        if (checked) {
+          selectedEntries.add(item.handle);
+          row.classList.add("is-selected");
+        } else {
+          selectedEntries.delete(item.handle);
+          row.classList.remove("is-selected");
+        }
       }
+      
+      lastSelectedIndex = index;
       updateSelectionCount();
       updateSelectAllState();
     };
@@ -543,7 +586,7 @@ function renderFileList() {
     row.appendChild(dateCell);
     row.appendChild(actionCell);
     fileListBody.appendChild(row);
-  }
+  });
 }
 
 document.addEventListener("click", () => {
@@ -1094,5 +1137,237 @@ async function deleteEntry(handle) {
     alert(`削除失敗: ${err.message}`);
   }
 }
+
+// -------------------------------------------------------------
+// 8. 連番付与モーダル
+// -------------------------------------------------------------
+btnBatchNumbering.addEventListener("click", () => {
+  if (selectedEntries.size === 0) {
+    alert("対象の項目を選択してください。");
+    return;
+  }
+  
+  // 選択アイテムを現在のソート順で配列化
+  pendingNumberingTargets = sortEntries(Array.from(selectedEntries).map(handle => {
+    return currentEntries.find(e => e.handle === handle);
+  })).map(entry => entry.handle);
+
+  numberingDialogDesc.textContent = `対象アイテム: ${pendingNumberingTargets.length} 件`;
+  
+  renderNumberingList();
+  updateNumberingPreview();
+  numberingDialog.showModal();
+});
+
+btnCancelNumbering.addEventListener("click", () => {
+  numberingDialog.close();
+});
+
+function renderNumberingList() {
+  numberingList.innerHTML = "";
+  
+  pendingNumberingTargets.forEach((handle, index) => {
+    const li = document.createElement("li");
+    li.className = "numbering-item";
+    li.draggable = true;
+    li.dataset.index = index;
+    
+    // Drag & Drop events
+    li.addEventListener("dragstart", handleDragStart);
+    li.addEventListener("dragover", handleDragOver);
+    li.addEventListener("drop", handleDrop);
+    li.addEventListener("dragenter", handleDragEnter);
+    li.addEventListener("dragleave", handleDragLeave);
+    li.addEventListener("dragend", handleDragEnd);
+
+    const isDir = handle.kind === "directory";
+    const icon = isDir ? ICONS.folder : ICONS.file;
+    
+    li.innerHTML = `
+      <div class="numbering-item-left">
+        ${ICONS.drag}
+        ${icon}
+        <span class="numbering-old-name" title="${handle.name}">${handle.name}</span>
+      </div>
+      <span class="numbering-preview-arrow">➔</span>
+      <span class="numbering-preview-new" title=""></span>
+    `;
+    
+    numberingList.appendChild(li);
+  });
+}
+
+// Drag and drop handlers
+let dragSrcEl = null;
+
+function handleDragStart(e) {
+  dragSrcEl = this;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", this.dataset.index);
+  setTimeout(() => this.classList.add("dragging"), 0);
+}
+
+function handleDragOver(e) {
+  if (e.preventDefault) {
+    e.preventDefault();
+  }
+  e.dataTransfer.dropEffect = "move";
+  return false;
+}
+
+function handleDragEnter(e) {
+  this.classList.add("drag-over");
+}
+
+function handleDragLeave(e) {
+  this.classList.remove("drag-over");
+}
+
+function handleDrop(e) {
+  if (e.stopPropagation) {
+    e.stopPropagation();
+  }
+  
+  if (dragSrcEl !== this) {
+    const srcIndex = parseInt(dragSrcEl.dataset.index);
+    const destIndex = parseInt(this.dataset.index);
+    
+    const targetHandle = pendingNumberingTargets.splice(srcIndex, 1)[0];
+    pendingNumberingTargets.splice(destIndex, 0, targetHandle);
+    
+    renderNumberingList();
+    updateNumberingPreview();
+  }
+  return false;
+}
+
+function handleDragEnd(e) {
+  this.classList.remove("dragging");
+  document.querySelectorAll(".numbering-item").forEach(item => {
+    item.classList.remove("drag-over");
+  });
+}
+
+// プレビューの計算
+function updateNumberingPreview() {
+  const start = parseInt(numStart.value) || 0;
+  const padding = parseInt(numPadding.value) || 1;
+  const pos = numPosition.value;
+  const sep = numSeparator.value;
+  
+  const items = numberingList.querySelectorAll(".numbering-item");
+  
+  items.forEach((item, idx) => {
+    const handle = pendingNumberingTargets[idx];
+    const originalName = handle.name;
+    const numStr = String(start + idx).padStart(padding, "0");
+    let newName = "";
+    
+    if (handle.kind === "directory") {
+      newName = pos === "prefix" 
+        ? `${numStr}${sep}${originalName}` 
+        : `${originalName}${sep}${numStr}`;
+    } else {
+      const lastDotIndex = originalName.lastIndexOf(".");
+      if (lastDotIndex > 0) {
+        const baseName = originalName.substring(0, lastDotIndex);
+        const ext = originalName.substring(lastDotIndex);
+        newName = pos === "prefix"
+          ? `${numStr}${sep}${baseName}${ext}`
+          : `${baseName}${sep}${numStr}${ext}`;
+      } else {
+        newName = pos === "prefix"
+          ? `${numStr}${sep}${originalName}`
+          : `${originalName}${sep}${numStr}`;
+      }
+    }
+    
+    const newNameEl = item.querySelector(".numbering-preview-new");
+    newNameEl.textContent = newName;
+    newNameEl.title = newName;
+    item.dataset.newName = newName;
+  });
+}
+
+// イベントリスナー（設定変更時にプレビューを即時更新）
+[numStart, numPadding, numPosition, numSeparator].forEach(el => {
+  el.addEventListener("input", updateNumberingPreview);
+  el.addEventListener("change", updateNumberingPreview);
+});
+
+btnConfirmNumbering.addEventListener("click", async () => {
+  if (pendingNumberingTargets.length === 0) return;
+  
+  // 変更のリストを作成
+  const renameQueue = [];
+  const items = numberingList.querySelectorAll(".numbering-item");
+  items.forEach((item, idx) => {
+    const handle = pendingNumberingTargets[idx];
+    const oldName = handle.name;
+    const newName = item.dataset.newName;
+    if (oldName !== newName) {
+      renameQueue.push({ handle, oldName, newName });
+    }
+  });
+  
+  if (renameQueue.length === 0) {
+    alert("ファイル名が変更されるアイテムがありません。");
+    return;
+  }
+  
+  // 事前チェック: 生成される名前が既存ファイルと衝突しないか（対象アイテム同士の衝突は除く）
+  const originalNamesInBatch = new Set(renameQueue.map(q => q.oldName));
+  for (const q of renameQueue) {
+    const existing = currentEntries.find(e => e.name === q.newName);
+    // その新しい名前が既存のディレクトリにあり、かつそれが今回のリネーム対象外である場合
+    if (existing && !originalNamesInBatch.has(q.newName)) {
+      alert(`エラー: 既存のアイテム「${q.newName}」と名前が衝突します。\n設定を見直すか、既存のアイテムを移動してください。`);
+      return;
+    }
+  }
+  
+  if (!confirm(`${renameQueue.length} 件のアイテムに連番を適用しますか？`)) {
+    return;
+  }
+  
+  if (!(await verifyPermission(currentDirectoryHandle, true))) {
+    alert("現在のフォルダへの書き込み権限がありません。");
+    return;
+  }
+  
+  numberingDialog.close();
+  isOperating = true;
+  const totalSteps = renameQueue.length * 2;
+  showLoading("連番を適用中...", totalSteps);
+  
+  let currentStep = 0;
+  const tempPrefix = `temp_${Date.now()}_`;
+  
+  try {
+    // ステップ1: すべてをテンポラリ名に変更（玉突き衝突回避）
+    for (const q of renameQueue) {
+      q.tempName = `${tempPrefix}${q.oldName}`;
+      await q.handle.move(q.tempName);
+      currentStep++;
+      updateLoading(currentStep, totalSteps);
+      await nextTick();
+    }
+    
+    // ステップ2: テンポラリ名から最終名に変更
+    for (const q of renameQueue) {
+      await q.handle.move(q.newName);
+      currentStep++;
+      updateLoading(currentStep, totalSteps);
+      await nextTick();
+    }
+  } catch (err) {
+    console.error("連番リネーム中にエラー発生", err);
+    alert(`リネーム中にエラーが発生しました: ${err.message}\n一部のファイルがテンポラリ名のままになっている可能性があります。`);
+  } finally {
+    hideLoading();
+    isOperating = false;
+    await refreshList();
+  }
+});
 
 btnRefresh.addEventListener("click", () => refreshList());
