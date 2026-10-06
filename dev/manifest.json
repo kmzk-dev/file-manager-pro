@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "File Manager Pro",
   "version": "1.1.0",
-  "description": "ローカルディレクトリのファイルを一括操作（文字列の付与や除去）できるファイルマネージャー",
+  "description": "A lightweight, secure browser-based file manager for batch renaming, numbering, and organizing local files.",
   "action": {
     "default_icon": {
       "16": "assets/app-icon-16.png",

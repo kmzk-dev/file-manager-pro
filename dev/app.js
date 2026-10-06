@@ -8,16 +8,16 @@ let lastSelectedIndex = null;
 let autoReloadTimer = null;
 let isOperating = false;
 
-// ソート状態管理
+// Sort state management
 let currentSortKey = "name"; // 'name' | 'ext' | 'size' | 'date'
 let currentSortOrder = "asc"; // 'asc' | 'desc'
 
-// DOM要素
+// DOM Elements
 const btnOpenDir = document.getElementById("btnOpenDir");
 const currentDirPath = document.getElementById("currentDirPath");
 const btnRefresh = document.getElementById("btnRefresh");
 
-// 2連ソートセレクトボックス
+// Sort select boxes
 const sortKeySelect = document.getElementById("sortKeySelect");
 const sortOrderSelect = document.getElementById("sortOrderSelect");
 
@@ -39,12 +39,12 @@ const selectAllCheckbox = document.getElementById("selectAllCheckbox");
 const selectedCountLabel = document.getElementById("selectedCountLabel");
 const fileListBody = document.getElementById("fileListBody");
 
-// ローディング要素
+// Loading Elements
 const loadingOverlay = document.getElementById("loadingOverlay");
 const loadingTitle = document.getElementById("loadingTitle");
 const loadingProgress = document.getElementById("loadingProgress");
 
-// モーダル要素
+// Modal Elements
 const moveDialog = document.getElementById("moveDialog");
 const moveDialogTitle = document.getElementById("moveDialogTitle");
 const moveDialogDesc = document.getElementById("moveDialogDesc");
@@ -52,7 +52,7 @@ const folderSelectList = document.getElementById("folderSelectList");
 const btnConfirmMove = document.getElementById("btnConfirmMove");
 const btnCancelMove = document.getElementById("btnCancelMove");
 
-// 連番付与モーダル要素
+// Numbering Modal Elements
 const numberingDialog = document.getElementById("numberingDialog");
 const numberingDialogDesc = document.getElementById("numberingDialogDesc");
 const numStart = document.getElementById("numStart");
@@ -68,7 +68,7 @@ let pendingMoveTargets = [];
 let selectedDestDirHandle = null;
 
 // -------------------------------------------------------------
-// SVG アイコン定義
+// SVG Icon Definitions
 // -------------------------------------------------------------
 const ICONS = {
   folder: `<svg class="icon entry-icon folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`,
@@ -101,17 +101,17 @@ function formatBytes(bytes) {
 }
 
 // -------------------------------------------------------------
-// ローディング制御ヘルパー
+// Loading control helpers
 // -------------------------------------------------------------
 function showLoading(title, total) {
   loadingTitle.textContent = title;
-  loadingProgress.textContent = `0 / ${total} 件 (0%)`;
+  loadingProgress.textContent = `0 / ${total} items (0%)`;
   loadingOverlay.removeAttribute("hidden");
 }
 
 function updateLoading(current, total) {
   const percent = Math.round((current / total) * 100);
-  loadingProgress.textContent = `${current} / ${total} 件 (${percent}%)`;
+  loadingProgress.textContent = `${current} / ${total} items (${percent}%)`;
 }
 
 function hideLoading() {
@@ -137,7 +137,7 @@ async function verifyPermission(fileHandle, readWrite) {
 function renderBreadcrumbs() {
   currentDirPath.innerHTML = "";
   if (!currentDirectoryHandle) {
-    currentDirPath.textContent = "未選択";
+    currentDirPath.textContent = "Not selected";
     return;
   }
 
@@ -167,7 +167,7 @@ function renderBreadcrumbs() {
 }
 
 // -------------------------------------------------------------
-// 1. フォルダ選択ダイアログ
+// 1. Open Directory Dialog
 // -------------------------------------------------------------
 btnOpenDir.addEventListener("click", async () => {
   try {
@@ -183,13 +183,13 @@ btnOpenDir.addEventListener("click", async () => {
     setupAutoReload();
   } catch (err) {
     if (err.name !== "AbortError") {
-      alert(`フォルダ読み込みエラー: ${err.message}`);
+      alert(`Failed to open folder: ${err.message}`);
     }
   }
 });
 
 // -------------------------------------------------------------
-// 2. オートリロード（自動更新）
+// 2. Auto Reload
 // -------------------------------------------------------------
 function setupAutoReload() {
   if (autoReloadTimer) {
@@ -213,7 +213,7 @@ function setupAutoReload() {
 autoReloadSelect.addEventListener("change", setupAutoReload);
 
 // -------------------------------------------------------------
-// 3. ソートロジック（2連セレクト & ヘッダークリック連動）
+// 3. Sort Logic
 // -------------------------------------------------------------
 sortKeySelect.addEventListener("change", (e) => {
   currentSortKey = e.target.value;
@@ -270,9 +270,9 @@ function sortEntries(entries) {
     }
 
     if (currentSortKey === "name") {
-      return a.baseName.localeCompare(b.baseName, "ja", { numeric: true }) * factor;
+      return a.baseName.localeCompare(b.baseName, undefined, { numeric: true }) * factor;
     } else if (currentSortKey === "ext") {
-      return a.ext.localeCompare(b.ext, "ja") * factor;
+      return a.ext.localeCompare(b.ext, undefined) * factor;
     } else if (currentSortKey === "size") {
       return (a.size - b.size) * factor;
     } else if (currentSortKey === "date") {
@@ -283,7 +283,7 @@ function sortEntries(entries) {
 }
 
 // -------------------------------------------------------------
-// 4. 一覧の取得と描画
+// 4. File List Fetching and Rendering
 // -------------------------------------------------------------
 async function refreshList(isSilent = false) {
   if (!currentDirectoryHandle) return;
@@ -345,19 +345,19 @@ async function refreshList(isSilent = false) {
   } catch (err) {
     if (!isSilent) {
       if (err.name === "NotFoundError") {
-        alert("操作中のフォルダが削除または移動されたため、表示を初期化します。");
+        alert("The selected folder was deleted or moved. Resetting view.");
         currentDirectoryHandle = null;
         pathStack = [];
         renderBreadcrumbs();
         fileListBody.innerHTML = `
           <tr>
             <td colspan="7" class="empty-state">
-              <p class="empty-title">フォルダが見つかりません</p>
-              <p class="empty-subtitle">上部の「フォルダを開く」から作業ディレクトリを選択してください。</p>
+              <p class="empty-title">Folder not found</p>
+              <p class="empty-subtitle">Please click "Open Folder" above to select a working directory.</p>
             </td>
           </tr>`;
       } else {
-        alert(`一覧取得エラー: ${err.message}`);
+        alert(`Failed to list files: ${err.message}`);
       }
     }
   }
@@ -370,8 +370,8 @@ function renderFileList() {
     fileListBody.innerHTML = `
       <tr>
         <td colspan="7" class="empty-state">
-          <p class="empty-title">フォルダは空です</p>
-          <p class="empty-subtitle">新規ファイルまたは新規フォルダを作成してください。</p>
+          <p class="empty-title">Folder is empty</p>
+          <p class="empty-subtitle">Create a new file or folder to get started.</p>
         </td>
       </tr>`;
     return;
@@ -390,7 +390,7 @@ function renderFileList() {
         try {
           const subDirHandle = await currentDirectoryHandle.getDirectoryHandle(item.name);
           if (!(await verifyPermission(subDirHandle, false))) {
-            alert("このフォルダへのアクセス権限がありません。");
+            alert("Permission denied to access this folder.");
             return;
           }
           currentDirectoryHandle = subDirHandle;
@@ -398,14 +398,14 @@ function renderFileList() {
           renderBreadcrumbs();
           await refreshList();
         } catch (err) {
-          alert(`フォルダへのアクセスエラー: ${err.message}`);
+          alert(`Failed to access folder: ${err.message}`);
         }
       });
-      // フォルダ行はクリック可能であることを示す
+      // Indicate folder row is clickable
       row.style.cursor = "pointer";
     }
 
-    // 1. チェックボックス
+    // 1. Checkbox
     const checkCell = document.createElement("td");
     checkCell.className = "cell-check";
     const checkbox = document.createElement("input");
@@ -452,7 +452,7 @@ function renderFileList() {
     };
     checkCell.appendChild(checkbox);
 
-    // 2. 名前
+    // 2. Name
     const nameCell = document.createElement("td");
     const isDir = item.kind === "directory";
     nameCell.className = "cell-name";
@@ -463,13 +463,13 @@ function renderFileList() {
       </div>
     `;
 
-    // 開く列
+    // Open column
     const openCell = document.createElement("td");
     openCell.className = "cell-open";
     if (!isDir && isPreviewable(item.ext)) {
       const openBtn = document.createElement("button");
       openBtn.className = "btn-open-file";
-      openBtn.title = "別タブでプレビュー";
+      openBtn.title = "Preview in new tab";
       openBtn.innerHTML = ICONS.openExternal;
       openBtn.onclick = async (e) => {
         e.stopPropagation();
@@ -478,13 +478,13 @@ function renderFileList() {
           const fileUrl = URL.createObjectURL(file);
           window.open(fileUrl, "_blank");
         } catch (err) {
-          alert(`ファイルを開くことができませんでした: ${err.message}`);
+          alert(`Could not open file: ${err.message}`);
         }
       };
       openCell.appendChild(openBtn);
     }
 
-    // 3. 拡張子
+    // 3. Extension
     const extCell = document.createElement("td");
     extCell.className = "cell-ext col-optional";
     if (isDir) {
@@ -494,7 +494,7 @@ function renderFileList() {
       extCell.innerHTML = cleanExt ? `<span class="ext-badge">${cleanExt}</span>` : `<span class="ext-folder">-</span>`;
     }
 
-    // 4. サイズ
+    // 4. Size
     const sizeCell = document.createElement("td");
     sizeCell.className = "cell-size col-optional";
     if (isDir) {
@@ -503,7 +503,7 @@ function renderFileList() {
       sizeCell.innerHTML = `<span class="size-text">${formatBytes(item.size)}</span>`;
     }
 
-    // 5. 日時
+    // 5. Date
     const dateCell = document.createElement("td");
     dateCell.className = "cell-date col-optional";
     if (item.lastModified > 0) {
@@ -514,16 +514,16 @@ function renderFileList() {
       dateCell.innerHTML = `<span class="date-text">-</span>`;
     }
 
-    // 6. ≡ メニュードロップダウン
+    // 6. Action Menu Dropdown
     const actionCell = document.createElement("td");
     actionCell.className = "cell-actions";
     actionCell.innerHTML = `
       <div class="action-menu-container">
-        <button class="btn-menu-trigger" title="操作メニュー">${ICONS.menu}</button>
+        <button class="btn-menu-trigger" title="Actions">${ICONS.menu}</button>
         <div class="dropdown-menu">
-          <button class="menu-item menu-rename">${ICONS.edit}<span>リネーム</span></button>
-          <button class="menu-item menu-move">${ICONS.move}<span>移動</span></button>
-          ${isDir ? "" : `<button class="menu-item danger menu-delete">${ICONS.delete}<span>削除</span></button>`}
+          <button class="menu-item menu-rename">${ICONS.edit}<span>Rename</span></button>
+          <button class="menu-item menu-move">${ICONS.move}<span>Move</span></button>
+          ${isDir ? "" : `<button class="menu-item danger menu-delete">${ICONS.delete}<span>Delete</span></button>`}
         </div>
       </div>
     `;
@@ -614,7 +614,7 @@ selectAllCheckbox.addEventListener("change", (e) => {
 });
 
 function updateSelectionCount() {
-  selectedCountLabel.textContent = `${selectedEntries.size} 件選択中`;
+  selectedCountLabel.textContent = `${selectedEntries.size} items selected`;
 }
 
 function updateSelectAllState() {
@@ -624,18 +624,18 @@ function updateSelectAllState() {
 }
 
 // -------------------------------------------------------------
-// 5. Prefix / Suffix 挿入 & 文字列除去
+// 5. Add Prefix / Suffix & Replace / Remove Text
 // -------------------------------------------------------------
 btnBatchPrefix.addEventListener("click", async () => {
   const prefix = commonInput.value;
   if (!prefix) {
-    alert("文字列入力欄にPrefixを入力してください。");
+    alert("Please enter a prefix in the input field.");
     commonInput.focus();
     return;
   }
 
   if (selectedEntries.size === 0) {
-    alert("対象の項目を選択してください。");
+    alert("Please select items to modify.");
     return;
   }
 
@@ -644,17 +644,17 @@ btnBatchPrefix.addEventListener("click", async () => {
     renameQueue.push({ handle: handle, oldName: handle.name, newName: `${prefix}${handle.name}` });
   }
 
-  if (!confirm(`選択した ${renameQueue.length} 件の先頭に「${prefix}」を追加しますか？`)) {
+  if (!confirm(`Add prefix "${prefix}" to ${renameQueue.length} selected item(s)?`)) {
     return;
   }
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
   isOperating = true;
-  showLoading("Prefixを追加中...", renameQueue.length);
+  showLoading("Adding prefix...", renameQueue.length);
 
   for (let i = 0; i < renameQueue.length; i++) {
     const item = renameQueue[i];
@@ -677,13 +677,13 @@ btnBatchPrefix.addEventListener("click", async () => {
 btnBatchSuffix.addEventListener("click", async () => {
   const suffix = commonInput.value;
   if (!suffix) {
-    alert("文字列入力欄にSuffixを入力してください。");
+    alert("Please enter a suffix in the input field.");
     commonInput.focus();
     return;
   }
 
   if (selectedEntries.size === 0) {
-    alert("対象の項目を選択してください。");
+    alert("Please select items to modify.");
     return;
   }
 
@@ -708,17 +708,17 @@ btnBatchSuffix.addEventListener("click", async () => {
     renameQueue.push({ handle: handle, oldName: originalName, newName: newName });
   }
 
-  if (!confirm(`選択した ${renameQueue.length} 件の末尾に「${suffix}」を追加しますか？`)) {
+  if (!confirm(`Add suffix "${suffix}" to ${renameQueue.length} selected item(s)?`)) {
     return;
   }
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
   isOperating = true;
-  showLoading("Suffixを追加中...", renameQueue.length);
+  showLoading("Adding suffix...", renameQueue.length);
 
   for (let i = 0; i < renameQueue.length; i++) {
     const item = renameQueue[i];
@@ -741,17 +741,17 @@ btnBatchSuffix.addEventListener("click", async () => {
 btnBatchReplace.addEventListener("click", async () => {
   const targetStr = commonInput.value;
   if (!targetStr) {
-    alert("文字列入力欄に置き換え元の文字列を入力してください。");
+    alert("Please enter the text to find in the input field.");
     commonInput.focus();
     return;
   }
 
   if (selectedEntries.size === 0) {
-    alert("対象の項目を選択してください。");
+    alert("Please select items to modify.");
     return;
   }
 
-  const replacementStr = prompt(`「${targetStr}」を何に置き換えますか？\n(空欄にした場合は削除と同じになります)`);
+  const replacementStr = prompt(`Replace "${targetStr}" with:\n(Leave blank to remove)`);
   if (replacementStr === null) {
     return;
   }
@@ -769,7 +769,7 @@ btnBatchReplace.addEventListener("click", async () => {
         const baseName = originalName.substring(0, lastDotIndex);
         const ext = originalName.substring(lastDotIndex);
         const newBaseName = baseName.replaceAll(targetStr, replacementStr);
-        if (!newBaseName.trim() && !ext) continue; // ファイル名全体が空になるのを防ぐ（拡張子があれば許容）
+        if (!newBaseName.trim() && !ext) continue;
         newName = `${newBaseName}${ext}`;
       } else {
         newName = originalName.replaceAll(targetStr, replacementStr);
@@ -782,21 +782,21 @@ btnBatchReplace.addEventListener("click", async () => {
   }
 
   if (renameQueue.length === 0) {
-    alert("対象の文字列が含まれる項目が見つかりませんでした。");
+    alert(`No matching items found containing "${targetStr}".`);
     return;
   }
 
-  if (!confirm(`${renameQueue.length} 件の置き換え候補が見つかりました。\n「${targetStr}」を「${replacementStr}」に置き換えますか？`)) {
+  if (!confirm(`Found ${renameQueue.length} item(s) to replace.\nReplace "${targetStr}" with "${replacementStr}"?`)) {
     return;
   }
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
   isOperating = true;
-  showLoading("文字列を置換中...", renameQueue.length);
+  showLoading("Replacing text...", renameQueue.length);
 
   for (let i = 0; i < renameQueue.length; i++) {
     const item = renameQueue[i];
@@ -819,13 +819,13 @@ btnBatchReplace.addEventListener("click", async () => {
 btnBatchRemove.addEventListener("click", async () => {
   const targetStr = commonInput.value;
   if (!targetStr) {
-    alert("文字列入力欄に除去したい文字列を入力してください。");
+    alert("Please enter the text to remove in the input field.");
     commonInput.focus();
     return;
   }
 
   if (selectedEntries.size === 0) {
-    alert("対象の項目を選択してください。");
+    alert("Please select items to modify.");
     return;
   }
 
@@ -855,21 +855,21 @@ btnBatchRemove.addEventListener("click", async () => {
   }
 
   if (renameQueue.length === 0) {
-    alert("対象の文字列が含まれる項目が見つかりませんでした。");
+    alert(`No matching items found containing "${targetStr}".`);
     return;
   }
 
-  if (!confirm(`${renameQueue.length} 件の除去候補が見つかりました。\n「${targetStr}」を除去しますか？`)) {
+  if (!confirm(`Found ${renameQueue.length} item(s) to remove.\nRemove "${targetStr}"?`)) {
     return;
   }
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
   isOperating = true;
-  showLoading("文字列を除去中...", renameQueue.length);
+  showLoading("Removing text...", renameQueue.length);
 
   for (let i = 0; i < renameQueue.length; i++) {
     const item = renameQueue[i];
@@ -890,7 +890,7 @@ btnBatchRemove.addEventListener("click", async () => {
 });
 
 // -------------------------------------------------------------
-// 6. 移動モーダル
+// 6. Move Dialog
 // -------------------------------------------------------------
 async function getAllDirectories(handle, pathStr = "", excludePaths = new Set()) {
   const dirs = [];
@@ -916,7 +916,7 @@ async function getAllDirectories(handle, pathStr = "", excludePaths = new Set())
       }
     }
   } catch (err) {
-    console.warn("ディレクトリ取得スキップ:", pathStr, err);
+    console.warn("Directory fetch skipped:", pathStr, err);
   }
   return dirs;
 }
@@ -936,7 +936,7 @@ async function openMoveModal(targets) {
   });
 
   isOperating = true;
-  showLoading("移動先フォルダを検索中...", 0);
+  showLoading("Searching folders...", 0);
   
   let validFolders = [];
   try {
@@ -951,7 +951,7 @@ async function openMoveModal(targets) {
     });
 
   } catch (err) {
-    alert("フォルダ検索エラー: " + err.message);
+    alert("Failed to find folders: " + err.message);
     hideLoading();
     isOperating = false;
     return;
@@ -960,12 +960,12 @@ async function openMoveModal(targets) {
   isOperating = false;
 
   if (validFolders.length === 0) {
-    alert("移動先として選択可能なフォルダが存在しません。");
+    alert("No available destination folders found.");
     return;
   }
 
-  moveDialogTitle.textContent = `移動先のフォルダを選択 (${targets.length} 件)`;
-  moveDialogDesc.textContent = `選択中のアイテム: 合計 ${targets.length} 件`;
+  moveDialogTitle.textContent = `Select Destination Folder (${targets.length} items)`;
+  moveDialogDesc.textContent = `Selected items: ${targets.length} items`;
   folderSelectList.innerHTML = "";
 
   validFolders.forEach((folder) => {
@@ -993,12 +993,12 @@ btnConfirmMove.addEventListener("click", async () => {
   if (!selectedDestDirHandle || pendingMoveTargets.length === 0) return;
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
   if (!(await verifyPermission(selectedDestDirHandle, true))) {
-    alert("移動先フォルダへの書き込み権限がありません。");
+    alert("Write permission denied for destination folder.");
     return;
   }
 
@@ -1006,7 +1006,7 @@ btnConfirmMove.addEventListener("click", async () => {
   moveDialog.close();
 
   isOperating = true;
-  showLoading("フォルダへ移動中...", total);
+  showLoading("Moving items...", total);
 
   try {
     const destDirHandle = selectedDestDirHandle;
@@ -1016,7 +1016,7 @@ btnConfirmMove.addEventListener("click", async () => {
       try {
         await entry.move(destDirHandle);
       } catch (err) {
-        console.error(`移動失敗: ${entry.name}`, err);
+        console.error(`Move failed: ${entry.name}`, err);
       }
       updateLoading(i + 1, total);
       await nextTick();
@@ -1024,7 +1024,7 @@ btnConfirmMove.addEventListener("click", async () => {
 
     await refreshList();
   } catch (err) {
-    alert(`移動エラー: ${err.message}`);
+    alert(`Failed to move items: ${err.message}`);
   } finally {
     hideLoading();
     isOperating = false;
@@ -1033,22 +1033,22 @@ btnConfirmMove.addEventListener("click", async () => {
 
 btnBatchMove.addEventListener("click", () => {
   if (selectedEntries.size === 0) {
-    alert("移動したい項目にチェックを入れてください。");
+    alert("Please select items to move.");
     return;
   }
   openMoveModal(Array.from(selectedEntries));
 });
 
 // -------------------------------------------------------------
-// 7. 新規作成・個別操作
+// 7. Create New / Individual Operations
 // -------------------------------------------------------------
 btnNewFile.addEventListener("click", async () => {
   if (!currentDirectoryHandle) return;
-  const fileName = prompt("新規作成するファイル名 (例: memo.txt):");
+  const fileName = prompt("Enter new file name (e.g., memo.txt):");
   if (!fileName) return;
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
@@ -1059,17 +1059,17 @@ btnNewFile.addEventListener("click", async () => {
     await writable.close();
     await refreshList();
   } catch (err) {
-    alert(`ファイル作成失敗: ${err.message}`);
+    alert(`Failed to create file: ${err.message}`);
   }
 });
 
 btnNewFolder.addEventListener("click", async () => {
   if (!currentDirectoryHandle) return;
-  const folderName = prompt("新規フォルダ名:");
+  const folderName = prompt("Enter new folder name:");
   if (!folderName) return;
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
@@ -1077,7 +1077,7 @@ btnNewFolder.addEventListener("click", async () => {
     await currentDirectoryHandle.getDirectoryHandle(folderName, { create: true });
     await refreshList();
   } catch (err) {
-    alert(`フォルダ作成失敗: ${err.message}`);
+    alert(`Failed to create folder: ${err.message}`);
   }
 });
 
@@ -1096,8 +1096,8 @@ async function renameEntry(handle) {
   }
 
   const promptMsg = isFile && ext
-    ? `新しいファイル名を入力してください (拡張子 ${ext} は自動維持されます):`
-    : `新しい名前を入力してください:`;
+    ? `Enter new file name (extension ${ext} will be preserved):`
+    : `Enter new name:`;
 
   const newBaseName = prompt(promptMsg, baseName);
   if (!newBaseName || newBaseName.trim() === "" || newBaseName === baseName) return;
@@ -1105,7 +1105,7 @@ async function renameEntry(handle) {
   const newFullName = `${newBaseName.trim()}${ext}`;
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
@@ -1113,20 +1113,20 @@ async function renameEntry(handle) {
     await handle.move(newFullName);
     await refreshList();
   } catch (err) {
-    alert(`リネーム失敗: ${err.message}`);
+    alert(`Failed to rename: ${err.message}`);
   }
 }
 
 async function deleteEntry(handle) {
   if (handle.kind === "directory") {
-    alert("フォルダの削除は許可されていません。");
+    alert("Deleting folders is not allowed.");
     return;
   }
 
-  if (!confirm(`「${handle.name}」を削除しますか？\n※この操作は元に戻せません（ゴミ箱には入らず、直接完全削除されます）。`)) return;
+  if (!confirm(`Delete "${handle.name}"?\n* This cannot be undone (permanently deleted, not sent to trash).`)) return;
 
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
 
@@ -1134,25 +1134,25 @@ async function deleteEntry(handle) {
     await currentDirectoryHandle.removeEntry(handle.name, { recursive: false });
     await refreshList();
   } catch (err) {
-    alert(`削除失敗: ${err.message}`);
+    alert(`Failed to delete: ${err.message}`);
   }
 }
 
 // -------------------------------------------------------------
-// 8. 連番付与モーダル
+// 8. Numbering Dialog
 // -------------------------------------------------------------
 btnBatchNumbering.addEventListener("click", () => {
   if (selectedEntries.size === 0) {
-    alert("対象の項目を選択してください。");
+    alert("Please select items to modify.");
     return;
   }
   
-  // 選択アイテムを現在のソート順で配列化
+  // Sort selected items according to current table sort
   pendingNumberingTargets = sortEntries(Array.from(selectedEntries).map(handle => {
     return currentEntries.find(e => e.handle === handle);
   })).map(entry => entry.handle);
 
-  numberingDialogDesc.textContent = `対象アイテム: ${pendingNumberingTargets.length} 件`;
+  numberingDialogDesc.textContent = `Target items: ${pendingNumberingTargets.length} items`;
   
   renderNumberingList();
   updateNumberingPreview();
@@ -1248,7 +1248,7 @@ function handleDragEnd(e) {
   });
 }
 
-// プレビューの計算
+// Preview calculation
 function updateNumberingPreview() {
   const start = parseInt(numStart.value) || 0;
   const padding = parseInt(numPadding.value) || 1;
@@ -1289,7 +1289,7 @@ function updateNumberingPreview() {
   });
 }
 
-// イベントリスナー（設定変更時にプレビューを即時更新）
+// Update preview on setting inputs
 [numStart, numPadding, numPosition, numSeparator].forEach(el => {
   el.addEventListener("input", updateNumberingPreview);
   el.addEventListener("change", updateNumberingPreview);
@@ -1298,7 +1298,7 @@ function updateNumberingPreview() {
 btnConfirmNumbering.addEventListener("click", async () => {
   if (pendingNumberingTargets.length === 0) return;
   
-  // 変更のリストを作成
+  // Build rename queue
   const renameQueue = [];
   const items = numberingList.querySelectorAll(".numbering-item");
   items.forEach((item, idx) => {
@@ -1311,40 +1311,39 @@ btnConfirmNumbering.addEventListener("click", async () => {
   });
   
   if (renameQueue.length === 0) {
-    alert("ファイル名が変更されるアイテムがありません。");
+    alert("No items to rename.");
     return;
   }
   
-  // 事前チェック: 生成される名前が既存ファイルと衝突しないか（対象アイテム同士の衝突は除く）
+  // Pre-check for naming collisions with existing files
   const originalNamesInBatch = new Set(renameQueue.map(q => q.oldName));
   for (const q of renameQueue) {
     const existing = currentEntries.find(e => e.name === q.newName);
-    // その新しい名前が既存のディレクトリにあり、かつそれが今回のリネーム対象外である場合
     if (existing && !originalNamesInBatch.has(q.newName)) {
-      alert(`エラー: 既存のアイテム「${q.newName}」と名前が衝突します。\n設定を見直すか、既存のアイテムを移動してください。`);
+      alert(`Error: Name conflict with existing item "${q.newName}".\nPlease adjust settings or move the existing item.`);
       return;
     }
   }
   
-  if (!confirm(`${renameQueue.length} 件のアイテムに連番を適用しますか？`)) {
+  if (!confirm(`Apply numbering to ${renameQueue.length} item(s)?`)) {
     return;
   }
   
   if (!(await verifyPermission(currentDirectoryHandle, true))) {
-    alert("現在のフォルダへの書き込み権限がありません。");
+    alert("Write permission denied for current folder.");
     return;
   }
   
   numberingDialog.close();
   isOperating = true;
   const totalSteps = renameQueue.length * 2;
-  showLoading("連番を適用中...", totalSteps);
+  showLoading("Applying numbering...", totalSteps);
   
   let currentStep = 0;
   const tempPrefix = `temp_${Date.now()}_`;
   
   try {
-    // ステップ1: すべてをテンポラリ名に変更（玉突き衝突回避）
+    // Step 1: Move to temporary names to avoid chain collisions
     for (const q of renameQueue) {
       q.tempName = `${tempPrefix}${q.oldName}`;
       await q.handle.move(q.tempName);
@@ -1353,7 +1352,7 @@ btnConfirmNumbering.addEventListener("click", async () => {
       await nextTick();
     }
     
-    // ステップ2: テンポラリ名から最終名に変更
+    // Step 2: Move from temporary names to final names
     for (const q of renameQueue) {
       await q.handle.move(q.newName);
       currentStep++;
@@ -1361,8 +1360,8 @@ btnConfirmNumbering.addEventListener("click", async () => {
       await nextTick();
     }
   } catch (err) {
-    console.error("連番リネーム中にエラー発生", err);
-    alert(`リネーム中にエラーが発生しました: ${err.message}\n一部のファイルがテンポラリ名のままになっている可能性があります。`);
+    console.error("Error during batch numbering rename", err);
+    alert(`Error during renaming: ${err.message}\nSome files may remain with temporary names.`);
   } finally {
     hideLoading();
     isOperating = false;

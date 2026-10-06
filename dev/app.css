@@ -101,7 +101,7 @@ body {
   border-color: #cbd5e1;
 }
 
-/* 文字列除去ボタン（警告用：薄い赤） */
+/* Remove text button (Warning: light red) */
 #btnBatchRemove {
   background: #fef2f2;
   border-color: #fee2e2;
@@ -113,7 +113,7 @@ body {
   color: #dc2626;
 }
 
-/* 一括移動ボタン（操作用：薄い水色） */
+/* Batch move button (Action: light blue) */
 #btnBatchMove {
   background: #f0f9ff;
   border-color: #e0f2fe;
@@ -125,7 +125,7 @@ body {
   color: #0369a1;
 }
 
-/* 枠なしゴーストボタン（新規ファイル・新規フォルダ用） */
+/* Ghost button (New file / New folder) */
 .btn-ghost {
   background: transparent;
   color: var(--text-muted);
@@ -164,7 +164,7 @@ body {
   color: var(--text-main);
 }
 
-/* 1段目: フォルダを開く + プレーンパス + 新規作成 */
+/* Row 1: Open Folder + Plain Path + New Actions */
 .top-row {
   display: flex;
   align-items: center;
@@ -220,7 +220,7 @@ body {
   gap: 2px;
 }
 
-/* 2段目: ツールバー + 自動更新 + ソート */
+/* Row 2: Toolbar + Auto Reload + Sort */
 .second-row {
   display: flex;
   align-items: center;
@@ -265,7 +265,7 @@ body {
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-/* 自動更新 (枠なし) */
+/* Auto Reload (Borderless) */
 .auto-reload-plain {
   display: flex;
   align-items: center;
@@ -318,7 +318,7 @@ body {
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-/* 通常時（画面が大きいとき）: ソートドロップダウンと区切り線は非表示 */
+/* Default (Wide screen): Sort dropdowns and dividers are hidden */
 .toolbar-divider,
 .sort-controls-flat {
   display: none;
@@ -362,7 +362,7 @@ body {
   border-color: var(--border-color);
 }
 
-/* メインカード枠 */
+/* Main Card Container */
 .main-card {
   flex: 1;
   border: 1px solid var(--border-color);
@@ -416,7 +416,7 @@ th.sortable:hover {
   width: 12px;
 }
 
-/* 列幅設定 */
+/* Column Widths */
 .th-check, .cell-check {
   width: 36px;
   text-align: center;
@@ -473,7 +473,7 @@ th.sortable:hover {
   white-space: nowrap;
 }
 
-/* テーブル・一覧 */
+/* Table & List */
 .card-body {
   flex: 1;
   overflow-y: auto;
@@ -564,7 +564,7 @@ td {
   color: var(--primary-hover);
 }
 
-/* ≡ ドロップダウンメニュー */
+/* Dropdown Menu */
 .action-menu-container {
   position: relative;
   display: inline-block;
@@ -647,7 +647,7 @@ td {
   background: var(--danger-light);
 }
 
-/* 一括処理中ローディングオーバーレイ */
+/* Batch Processing Loading Overlay */
 .loading-overlay {
   position: fixed;
   inset: 0;
@@ -725,7 +725,7 @@ td {
   color: var(--text-muted);
 }
 
-/* モーダルダイアログ */
+/* Modal Dialog */
 .modal-dialog {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -823,7 +823,7 @@ td {
   flex-shrink: 0;
 }
 
-/* 連番付与設定 */
+/* Batch Numbering Settings */
 .numbering-settings {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -946,7 +946,7 @@ td {
   margin-top: -6px;
 }
 
-/* レスポンシブ */
+/* Responsive */
 @media screen and (max-width: 860px) {
   body {
     padding: 10px;

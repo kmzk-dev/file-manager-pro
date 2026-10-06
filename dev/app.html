@@ -1,134 +1,134 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Folder Manager Pro</title>
+  <title>File Manager Pro</title>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/app-icon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/app-icon-16.png">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
   <div class="app-container">
-    <!-- 1段目: フォルダを開く + プレーンパス表示 + 新規作成ボタン群 -->
+    <!-- Row 1: Open Folder + Plain Path Display + New Actions -->
     <header class="top-row">
       <button id="btnOpenDir" class="btn btn-primary">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-        <span class="btn-text-label">フォルダを開く</span>
+        <span class="btn-text-label">Open Folder</span>
       </button>
 
       <div class="path-plain-text">
         <span class="path-arrow">&gt;</span>
-        <span id="currentDirPath" class="path-display">未選択</span>
+        <span id="currentDirPath" class="path-display">Not selected</span>
       </div>
 
       <div class="header-action-group">
-        <button id="btnNewFile" class="btn btn-ghost" title="新規ファイル">
+        <button id="btnNewFile" class="btn btn-ghost" title="New File">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
-          <span class="btn-text-label">新規ファイル</span>
+          <span class="btn-text-label">New File</span>
         </button>
-        <button id="btnNewFolder" class="btn btn-ghost" title="新規フォルダ">
+        <button id="btnNewFolder" class="btn btn-ghost" title="New Folder">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><path d="M12 10v6"/><path d="M9 13h6"/></svg>
-          <span class="btn-text-label">新規フォルダ</span>
+          <span class="btn-text-label">New Folder</span>
         </button>
       </div>
     </header>
 
-    <!-- 2段目: 一括操作ツールバー + 自動更新 + 右横にコンパクトソート -->
+    <!-- Row 2: Batch Actions Toolbar + Auto Reload + Compact Sort -->
     <section class="second-row">
       <div class="batch-actions-group">
         <div class="input-wrapper">
           <svg class="icon-sm input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="commonInput" class="custom-input" placeholder="対象文字列を入力..." />
+          <input type="text" id="commonInput" class="custom-input" placeholder="Enter target text..." />
         </div>
 
-        <!-- Prefixを追加 (+T) -->
-        <button id="btnBatchPrefix" class="btn btn-secondary btn-responsive" title="Prefixを追加">
+        <!-- Prefix (+T) -->
+        <button id="btnBatchPrefix" class="btn btn-secondary btn-responsive" title="Prefix">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="2" y1="12" x2="6" y2="12"/><line x1="4" y1="10" x2="4" y2="14"/>
             <path d="M10 7V4h11v3"/><path d="M14 20h3"/><path d="M15.5 4v16"/>
           </svg>
-          <span class="btn-text-label">Prefixを追加</span>
+          <span class="btn-text-label">Prefix</span>
         </button>
 
-        <!-- Suffixを追加 (T+) -->
-        <button id="btnBatchSuffix" class="btn btn-secondary btn-responsive" title="Suffixを追加">
+        <!-- Suffix (T+) -->
+        <button id="btnBatchSuffix" class="btn btn-secondary btn-responsive" title="Suffix">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7V4h11v3"/><path d="M7 20h3"/><path d="M8.5 4v16"/>
             <line x1="18" y1="12" x2="22" y2="12"/><line x1="20" y1="10" x2="20" y2="14"/>
           </svg>
-          <span class="btn-text-label">Suffixを追加</span>
+          <span class="btn-text-label">Suffix</span>
         </button>
 
-        <!-- 文字列を置換 -->
-        <button id="btnBatchReplace" class="btn btn-secondary btn-responsive" title="文字列を置換">
+        <!-- Replace -->
+        <button id="btnBatchReplace" class="btn btn-secondary btn-responsive" title="Replace">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 1l4 4-4 4"/>
             <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
             <path d="M7 23l-4-4 4-4"/>
             <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
           </svg>
-          <span class="btn-text-label">文字列を置換</span>
+          <span class="btn-text-label">Replace</span>
         </button>
         
-        <!-- 文字列を除去 (T-) -->
-        <button id="btnBatchRemove" class="btn btn-secondary btn-responsive" title="文字列を除去">
+        <!-- Remove (T-) -->
+        <button id="btnBatchRemove" class="btn btn-secondary btn-responsive" title="Remove">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7V4h11v3"/><path d="M7 20h3"/><path d="M8.5 4v16"/>
             <line x1="18" y1="12" x2="22" y2="12"/>
           </svg>
-          <span class="btn-text-label">文字列を除去</span>
+          <span class="btn-text-label">Remove</span>
         </button>
 
-        <!-- 一括移動 -->
-        <button id="btnBatchMove" class="btn btn-secondary btn-responsive" title="一括移動">
+        <!-- Move -->
+        <button id="btnBatchMove" class="btn btn-secondary btn-responsive" title="Move">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
-          <span class="btn-text-label">一括移動</span>
+          <span class="btn-text-label">Move</span>
         </button>
 
-        <!-- 連番を付与 -->
-        <button id="btnBatchNumbering" class="btn btn-secondary btn-responsive" title="連番を付与">
+        <!-- Numbering -->
+        <button id="btnBatchNumbering" class="btn btn-secondary btn-responsive" title="Numbering">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 6h.01M8 12h.01M8 18h.01"/></svg>
-          <span class="btn-text-label">連番を付与</span>
+          <span class="btn-text-label">Numbering</span>
         </button>
 
-        <!-- フラット自動更新 -->
-        <div class="auto-reload-plain" title="自動更新間隔">
+        <!-- Auto Reload -->
+        <div class="auto-reload-plain" title="Auto-reload interval">
           <span class="pulse-dot" id="reloadIndicator"></span>
-          <span class="reload-label">自動更新</span>
+          <span class="reload-label">Auto Reload</span>
           <select id="autoReloadSelect" class="reload-select-flat">
-            <option value="0">オフ</option>
-            <option value="3">3秒</option>
-            <option value="5">5秒</option>
-            <option value="10">10秒</option>
-            <option value="30" selected>30秒</option>
-            <option value="60">60秒</option>
+            <option value="0">Off</option>
+            <option value="3">3s</option>
+            <option value="5">5s</option>
+            <option value="10">10s</option>
+            <option value="30" selected>30s</option>
+            <option value="60">60s</option>
           </select>
         </div>
 
         <div class="toolbar-divider"></div>
 
-        <!-- 自動更新の右横に配置されたソートコントロール -->
+        <!-- Sort Controls -->
         <div class="sort-controls-flat">
           <svg class="icon-sm text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
           
-          <select id="sortKeySelect" class="flat-select" title="ソート対象">
-            <option value="name">名前</option>
-            <option value="ext">拡張子</option>
-            <option value="size">サイズ</option>
-            <option value="date">日時</option>
+          <select id="sortKeySelect" class="flat-select" title="Sort by">
+            <option value="name">Name</option>
+            <option value="ext">Extension</option>
+            <option value="size">Size</option>
+            <option value="date">Updated</option>
           </select>
 
           <div class="sort-divider"></div>
 
-          <select id="sortOrderSelect" class="flat-select" title="並び順">
-            <option value="asc">昇順</option>
-            <option value="desc">降順</option>
+          <select id="sortOrderSelect" class="flat-select" title="Order">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
           </select>
         </div>
       </div>
     </section>
 
-    <!-- メイン一覧カード -->
+    <!-- Main Card -->
     <main class="main-card">
       <div class="table-header-container">
         <table class="header-table">
@@ -139,33 +139,33 @@
               </th>
               <th class="th-name sortable" data-sort="name">
                 <div class="th-content">
-                  <span>名前</span>
-                  <span id="selectedCountLabel" class="count-badge">0 件選択中</span>
+                  <span>Name</span>
+                  <span id="selectedCountLabel" class="count-badge">0 items selected</span>
                   <span class="sort-indicator" id="sort-name">▲</span>
                 </div>
               </th>
               <th class="th-open"></th>
               <th class="th-ext sortable col-optional" data-sort="ext">
                 <div class="th-content">
-                  <span>拡張子</span>
+                  <span>Extension</span>
                   <span class="sort-indicator" id="sort-ext"></span>
                 </div>
               </th>
               <th class="th-size sortable col-optional" data-sort="size">
                 <div class="th-content">
-                  <span>サイズ</span>
+                  <span>Size</span>
                   <span class="sort-indicator" id="sort-size"></span>
                 </div>
               </th>
               <th class="th-date sortable col-optional" data-sort="date">
                 <div class="th-content">
-                  <span>日時</span>
+                  <span>Updated</span>
                   <span class="sort-indicator" id="sort-date"></span>
                 </div>
               </th>
               <th class="th-actions">
                 <div class="header-meta">
-                  <button id="btnRefresh" class="icon-only-btn" title="手動更新">
+                  <button id="btnRefresh" class="icon-only-btn" title="Refresh">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
                   </button>
                 </div>
@@ -181,8 +181,8 @@
             <tr>
               <td colspan="7" class="empty-state">
                 <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
-                <p class="empty-title">フォルダが選択されていません</p>
-                <p class="empty-subtitle">上部の「フォルダを開く」から操作したい作業ディレクトリを選択してください。</p>
+                <p class="empty-title">No folder selected</p>
+                <p class="empty-subtitle">Please click "Open Folder" above to select a working directory.</p>
               </td>
             </tr>
           </tbody>
@@ -191,16 +191,16 @@
     </main>
   </div>
 
-  <!-- 一括処理中ローディングオーバーレイ -->
+  <!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay" hidden>
     <div class="loading-content">
       <div class="spinner"></div>
-      <div id="loadingTitle" class="loading-title">処理中...</div>
-      <div id="loadingProgress" class="loading-progress">0 / 0 件 (0%)</div>
+      <div id="loadingTitle" class="loading-title">Processing...</div>
+      <div id="loadingProgress" class="loading-progress">0 / 0 items (0%)</div>
     </div>
   </div>
 
-  <!-- 移動先選択モーダルダイアログ -->
+  <!-- Move Dialog -->
   <dialog id="moveDialog" class="modal-dialog">
     <div class="dialog-content">
       <div class="dialog-header">
@@ -208,8 +208,8 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
         </div>
         <div>
-          <h3 id="moveDialogTitle" class="dialog-title">移動先のフォルダを選択</h3>
-          <p id="moveDialogDesc" class="dialog-desc">移動するアイテム: 0件</p>
+          <h3 id="moveDialogTitle" class="dialog-title">Select Destination Folder</h3>
+          <p id="moveDialogDesc" class="dialog-desc">Items to move: 0 items</p>
         </div>
       </div>
       
@@ -218,16 +218,16 @@
       </div>
 
       <div class="dialog-actions">
-        <button id="btnCancelMove" class="btn btn-secondary">キャンセル</button>
+        <button id="btnCancelMove" class="btn btn-secondary">Cancel</button>
         <button id="btnConfirmMove" class="btn btn-primary" disabled>
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
-          <span>このフォルダへ移動</span>
+          <span>Move to this folder</span>
         </button>
       </div>
     </div>
   </dialog>
 
-  <!-- 連番付与モーダルダイアログ -->
+  <!-- Numbering Dialog -->
   <dialog id="numberingDialog" class="modal-dialog">
     <div class="dialog-content">
       <div class="dialog-header">
@@ -235,29 +235,29 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 6h.01M8 12h.01M8 18h.01"/></svg>
         </div>
         <div>
-          <h3 id="numberingDialogTitle" class="dialog-title">連番を付与</h3>
-          <p id="numberingDialogDesc" class="dialog-desc">対象アイテム: 0件</p>
+          <h3 id="numberingDialogTitle" class="dialog-title">Numbering</h3>
+          <p id="numberingDialogDesc" class="dialog-desc">Target items: 0 items</p>
         </div>
       </div>
       
       <div class="numbering-settings">
         <div class="setting-group">
-          <label>開始番号</label>
+          <label>Start Number</label>
           <input type="number" id="numStart" class="custom-input small-input" value="1" min="0">
         </div>
         <div class="setting-group">
-          <label>桁数 (ゼロ埋め)</label>
+          <label>Digits (Zero Padding)</label>
           <input type="number" id="numPadding" class="custom-input small-input" value="1" min="1" max="10">
         </div>
         <div class="setting-group">
-          <label>付与位置</label>
+          <label>Position</label>
           <select id="numPosition" class="custom-input small-select">
-            <option value="prefix">先頭 (Prefix)</option>
-            <option value="suffix">末尾 (Suffix)</option>
+            <option value="prefix">Prefix</option>
+            <option value="suffix">Suffix</option>
           </select>
         </div>
         <div class="setting-group">
-          <label>区切り文字</label>
+          <label>Separator</label>
           <input type="text" id="numSeparator" class="custom-input small-input" value="_">
         </div>
       </div>
@@ -265,13 +265,13 @@
       <div class="numbering-list-container folder-list-container">
         <ul id="numberingList" class="folder-select-list"></ul>
       </div>
-      <p class="numbering-hint">※ アイテムをドラッグ＆ドロップで並べ替えられます。</p>
+      <p class="numbering-hint">* Drag and drop items to reorder.</p>
 
       <div class="dialog-actions">
-        <button id="btnCancelNumbering" class="btn btn-secondary">キャンセル</button>
+        <button id="btnCancelNumbering" class="btn btn-secondary">Cancel</button>
         <button id="btnConfirmNumbering" class="btn btn-primary">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg>
-          <span>適用</span>
+          <span>Apply</span>
         </button>
       </div>
     </div>
